@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import APIRouter, FastAPI, Depends
 from typing import TypedDict
 from pydantic import BaseModel
 from sqlmodel import Session, create_engine, Field, SQLModel, select
@@ -6,6 +6,8 @@ import jwt
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from datetime import date
 from passlib.hash import sha256_crypt
+
+from routes import accounts, transactions, users
 
 app = FastAPI()
 
@@ -116,7 +118,7 @@ def login(email: str, password: str):
 
 @app.post("/register")
 def register(email: str, password: str, lastname: str, firstname: str, session = Depends(get_session)):
-    if user := session.exec(select(User).where(User.email == email)).first():
+    if user:= session.exec(select(User).where(User.email == email)).first():
         return {"error": "User already exists"}
     user = User(email=email, password=sha256_crypt.hash(password), lastname=lastname, firstname=firstname)
     session.add(user)
@@ -125,5 +127,6 @@ def register(email: str, password: str, lastname: str, firstname: str, session =
     return {"token": generate_token(user)}
 
 @app.get("/me")
-def me(user=Depends(get_user)):
-    return user
+def me(token: dict = Depends(get_user)):
+    if token:
+        return {"id": token["id"],"email": token["email"], "firstname": token["firstname"], "lastname": token["lastname"]}
