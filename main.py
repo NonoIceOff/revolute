@@ -1,10 +1,11 @@
-from fastapi import APIRouter, FastAPI, Depends
+from math import floor
+from fastapi import APIRouter, FastAPI, Depends, HTTPException
 from typing import TypedDict
 from pydantic import BaseModel
 from sqlmodel import Session, create_engine, Field, SQLModel, select
 import jwt
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from datetime import date
+from datetime import date, datetime
 from passlib.hash import sha256_crypt
 
 from routes import accounts, transactions, users
@@ -42,7 +43,7 @@ class CreateUser(BaseModel):
 class Account(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
-    number: str = Field(max_length=255)
+    number: str = Field(max_length=255, nullable=True, unique=True)
     balance: float = Field(default=0)
     is_principal: bool = Field(default=False)
     is_closed: bool = Field(default=False)
@@ -50,11 +51,6 @@ class Account(SQLModel, table=True):
 
 class CreateAccount(BaseModel):
     user_id: int
-    number: str 
-    balance: float
-    is_principal: bool
-    is_closed: bool
-    creation_date: date
 
 class Transactions(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -86,7 +82,10 @@ def get_session():
 
 # Dependency
 def get_user(authorization: HTTPAuthorizationCredentials = Depends(bearer_scheme)):
-    return jwt.decode(authorization.credentials, secret_key, algorithms=[algorithm])
+    try:
+        return jwt.decode(authorization.credentials, secret_key, algorithms=[algorithm])
+    except:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
 def generate_token(user: User):
     return jwt.encode(user.dict(), secret_key, algorithm=algorithm)
@@ -107,14 +106,13 @@ def on_startup():
     create_db_and_tables()
 
 @app.post("/login")
-def login(email: str, password: str):
-    with Session(engine) as session:
-        user = session.exec(select(User).where(User.email == email)).first()
-        if not user:
-            return {"error": "User not found"}
-        if not sha256_crypt.verify(password, user.password):
-            return {"error": "Invalid password"}
-        return {"token": generate_token(user)}
+def login(email: str, password: str, session = Depends(get_session)):
+    user = session.exec(select(User).where(User.email == email)).first()
+    if not user:
+        return {"error": "User not found"}
+    if not sha256_crypt.verify(password, user.password):
+        return {"error": "Invalid password"}
+    return {"token": generate_token(user)}
 
 @app.post("/register")
 def register(email: str, password: str, lastname: str, firstname: str, session = Depends(get_session)):
@@ -127,6 +125,26 @@ def register(email: str, password: str, lastname: str, firstname: str, session =
     return {"token": generate_token(user)}
 
 @app.get("/me")
-def me(token: dict = Depends(get_user)):
-    if token:
-        return {"id": token["id"],"email": token["email"], "firstname": token["firstname"], "lastname": token["lastname"]}
+def me(user: dict = Depends(get_user)):
+    return {"id": user["id"],"email": user["email"], "firstname": user["firstname"], "lastname": user["lastname"]}
+    
+@app.post("/open_account")
+def open_account(body: CreateAccount, user: dict = Depends(get_user), session = Depends(get_session)):
+
+    user_id = user["id"]
+    if user_id is None:
+        return {"error": "User not found"}
+    
+    account = Account(user_id=body.user_id, number="", is_principal=True, is_closed=False, creation_date=date.today())
+    account.is_principal = can_create_principal_account(user_id, session)
+    dt = datetime.now()
+    account.number = "FR2540100001"+str(str(body.user_id)+str(floor(datetime.timestamp(dt)))[3:]).rjust(11, '0')
+
+    session.add(account)
+    session.commit()
+    session.refresh(account)
+    return account
+
+   
+def can_create_principal_account(user_id : int, session = Session)-> bool:
+    return not session.exec(select(Account.is_principal).where(Account.user_id == user_id, Account.is_principal == True)).first()
