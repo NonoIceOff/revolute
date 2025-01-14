@@ -19,25 +19,33 @@ def transactions(body: CreateTransactions,  user: dict = Depends(get_user), sess
         return {"error": "Account not found"}
     
     if body.account_to_id:
-        accountId1 = session.exec(select(Account).where(Account.id == body.account_to_id)).first()
-        accountId2 = session.exec(select(Account).where(Account.id == body.account_by_id)).first()
+        accountId_receiver = session.exec(select(Account).where(Account.id == body.account_to_id)).first()
+        accountId_sender = session.exec(select(Account).where(Account.id == body.account_by_id)).first()
 
         if body.balance <= 0:
             return {"error": "Bah nan dcp m'est de l'argent sale radin"}
+        
+        if accountId_sender.balance <= 0:
+            return {"error": "T'es pauvre ahahahahah"}
 
-        accountId1.balance += body.balance
-        accountId2.balance -= body.balance
-        session.add(accountId1)
-        session.add(accountId2)
+        accountId_receiver.balance += body.balance
+        accountId_sender.balance -= body.balance
+        session.add(accountId_receiver)
+        session.add(accountId_sender)
 
         transactions = Transactions(account_by_id = body.account_by_id, account_to_id=body.account_to_id, balance= body.balance, motif= "Non Merci", is_cancelled = False  )
 
         session.add(transactions)
         session.commit()
         session.refresh(transactions)
-        session.refresh(accountId1)
-        session.refresh(accountId2)
-        
-        return transactions, accountId1, accountId2
+        session.refresh(accountId_receiver)
+        session.refresh(accountId_sender)
+
+        return transactions, accountId_receiver, accountId_sender
     else:
         return {"error": "Account Not Found"}
+    
+
+    @routerTransactions.post("/history")
+    def historyTransactions():
+        return 
