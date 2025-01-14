@@ -1,13 +1,20 @@
 from asyncio import sleep
 from fastapi import APIRouter, FastAPI, Depends
-from .schemas import CreateAccount
 from .schemas import CreateTransactions
-from .models import Account
 from .models import Transactions
+from .models import Account
 from .config import *
-
+# from .dependencies import cancel_transactions
+import time
 
 routerTransactions = APIRouter()
+is_finish = False;
+
+@routerTransactions.post("/history")
+def historyTransactions(account_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
+        history = session.exec(select(Transactions).where(Transactions.account_by_id == user["id"] ).order_by(desc(Transactions.creation_date))).all()
+        print(history)
+        return [{"source_account": historys.account_by_id, "destination_account": historys.account_to_id, "price": historys.balance, "date": historys.creation_date, "motif": historys.motif} for historys in history ] 
 
 @routerTransactions.post("/transactions")
 def transactions(body: CreateTransactions,  user: dict = Depends(get_user), session = Depends(get_session)):

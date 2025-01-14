@@ -4,3 +4,8 @@ from .models import Account
 
 def can_create_principal_account(user_id : int, session = Session)-> bool:
     return not session.exec(select(Account.is_principal).where(Account.user_id == user_id, Account.is_principal == True)).first()
+
+# def cancel_transactions(is_cancel: bool) -> bool:
+#     if is_cancel == True:
+#         return True
+#     return False 
