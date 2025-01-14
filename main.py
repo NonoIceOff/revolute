@@ -1,17 +1,12 @@
 from fastapi import APIRouter, FastAPI, Depends, HTTPException
-from sqlmodel import Session, create_engine, Field, SQLModel, select
 from routes.config import *
 from routes.users import router
-from routes.accounts import router
-from routes.models import Account
-
-app = FastAPI()
-
+from routes.accounts import routerAccount
 
 # Models
 app = FastAPI()
 app.include_router(router);
-app.include_router(router);
+app.include_router(routerAccount);
 
 # Startup event
 @app.on_event("startup")

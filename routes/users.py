@@ -21,17 +21,15 @@ def read_users(session = Depends(get_session)):
     return users
 
 @router.post("/login")
-def login(email: str, password: str):
-    with Session(engine) as session:
-        user = session.exec(select(User).where(User.email == email)).first()
-        if not user:
-            return {"error": "User not found"}
-        if not sha256_crypt.verify(password, user.password):
-            return {"error": "Invalid password"}
-        return {"token": generate_token(user)}
+def login(email: str, password: str, session = Depends(get_session)):
+    user = session.exec(select(User).where(User.email == email)).first()
+    if not user:
+        return {"error": "User not found"}
+    if not sha256_crypt.verify(password, user.password):
+        return {"error": "Invalid password"}
+    return {"token": generate_token(user)}
     
 
-# ? fix email format Petit Bidule  
 @router.post("/register")
 def register(email: str, password: str, lastname: str, firstname: str, session = Depends(get_session)):
     # v = validate_format_email(email)

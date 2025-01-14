@@ -6,9 +6,9 @@ from .dependencies import can_create_principal_account
 from datetime import date, datetime
 from math import floor
 
-router = APIRouter()
+routerAccount = APIRouter()
 
-@router.post("/open_account")
+@routerAccount.post("/open_account")
 def open_account(body: CreateAccount, user: dict = Depends(get_user), session = Depends(get_session)):
 
     user_id = user["id"]
@@ -24,3 +24,7 @@ def open_account(body: CreateAccount, user: dict = Depends(get_user), session = 
     session.commit()
     session.refresh(account)
     return account
+
+@routerAccount.post("/view_account")
+def view_account():
+    return 
