@@ -6,6 +6,7 @@ from .dependencies import can_create_principal_account
 from datetime import date, datetime
 from math import floor
 
+
 routerAccount = APIRouter()
 
 @routerAccount.post("/open_account")
@@ -25,6 +26,9 @@ def open_account(body: CreateAccount, user: dict = Depends(get_user), session = 
     session.refresh(account)
     return account
 
-@routerAccount.post("/view_account")
-def view_account():
-    return 
+@routerAccount.get("/view_account")
+def view_account(account_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
+    account = session.exec(select(Account).where(Account.id == account_id)).first()
+    if account is None:
+        return {"error": "Account not found"}
+    return  {"number": account.number, "balance": account.balance, "creation_date": account.creation_date}

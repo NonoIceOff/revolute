@@ -20,4 +20,4 @@ def read_root():
 @app.get("/me")
 def me(user: dict = Depends(get_user)):
     return {"id": user["id"],"email": user["email"], "firstname": user["firstname"], "lastname": user["lastname"]}
-    
+        
