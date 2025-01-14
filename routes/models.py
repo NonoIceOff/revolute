@@ -25,7 +25,7 @@ class Transactions(SQLModel, table=True):
     account_by_id: int = Field(default=None, foreign_key="account.id")
     account_to_id: int = Field(default=None, foreign_key="account.id")
     balance: float = Field(default=0)
-    motif: str = Field(max_length=255)
+    motif: str | None = Field(default=None)
     creation_date: date = Field(default=date.today())
     is_chancelled: bool = Field(default=False)
 

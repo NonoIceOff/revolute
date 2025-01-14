@@ -3,12 +3,14 @@ from routes.config import *
 from routes.users import router
 from routes.accounts import routerAccount
 from routes.deposit import routerDeposit
+from routes.transactions import routerTransactions
 
 # Models
 app = FastAPI()
 app.include_router(router)
 app.include_router(routerAccount)
 app.include_router(routerDeposit)
+app.include_router(routerTransactions)
 
 # Startup event
 @app.on_event("startup")
