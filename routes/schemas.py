@@ -16,10 +16,14 @@ class CreateAccount(BaseModel):
     creation_date: date
 
 class CreateTransactions(BaseModel):
-    user_id: int
     account_by_id: int
     account_to_id: int
     balance: float
-    description: str
+    motif: str
     creation_date: date
     is_chancelled: bool
+
+class CreateDeposits(BaseModel):
+    account_id: int
+    earn: float
+    motif: str
