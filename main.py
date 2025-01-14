@@ -2,11 +2,13 @@ from fastapi import APIRouter, FastAPI, Depends, HTTPException
 from routes.config import *
 from routes.users import router
 from routes.accounts import routerAccount
+from routes.deposit import routerDeposit
 
 # Models
 app = FastAPI()
-app.include_router(router);
-app.include_router(routerAccount);
+app.include_router(router)
+app.include_router(routerAccount)
+app.include_router(routerDeposit)
 
 # Startup event
 @app.on_event("startup")

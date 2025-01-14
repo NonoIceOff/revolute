@@ -22,10 +22,16 @@ class Account(SQLModel, table=True):
 
 class Transactions(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    user_id: int = Field(default=None, foreign_key="user.id")
     account_by_id: int = Field(default=None, foreign_key="account.id")
     account_to_id: int = Field(default=None, foreign_key="account.id")
     balance: float = Field(default=0)
-    description: str = Field(max_length=255)
+    motif: str = Field(max_length=255)
     creation_date: date = Field(default=date.today())
     is_chancelled: bool = Field(default=False)
+
+class Deposits(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    account: int = Field(default=None, foreign_key="account.id")
+    earn: float = Field(default=0)
+    motif: str = Field(max_length=255)
+    creation_date: date = Field(default=date.today())
