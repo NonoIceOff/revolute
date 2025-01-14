@@ -3,11 +3,9 @@ from sqlmodel import Session, select
 from passlib.hash import sha256_crypt
 from .models import User
 from email_validator import validate_email, EmailNotValidError
-from .schemas import CreateUser
 from .config import *
 
 router = APIRouter()
-
 
 # def validate_format_email(email: str):
 #     try:
@@ -43,4 +41,4 @@ def register(email: str, password: str, lastname: str, firstname: str, session =
     session.add(user)
     session.commit()
     session.refresh(user)
-    return {"token": generate_token(user), "email": email}
+    return {"token": generate_token(user)}

@@ -4,9 +4,6 @@ from fastapi import APIRouter, FastAPI, Depends
 import jwt
 from .models import User
 
-
-
-
 #Configuration. 
 config = {"version": "1.0.0", "name": "POV"}
 
