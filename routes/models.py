@@ -13,7 +13,8 @@ class User(SQLModel, table=True):
 class Account(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
-    number: str = Field(max_length=255)
+    name: str = Field(min_length=1, max_length=255)
+    iban: str = Field(max_length=255)
     balance: float = Field(default=0)
     is_principal: bool = Field(default=False)
     is_closed: bool = Field(default=False)
