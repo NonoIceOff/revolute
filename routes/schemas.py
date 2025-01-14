@@ -9,7 +9,7 @@ class CreateUser(BaseModel):
 
 class CreateAccount(BaseModel):
     user_id: int
-    number: str 
+    name: str
     balance: float
     is_principal: bool
     is_closed: bool

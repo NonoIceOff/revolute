@@ -16,10 +16,14 @@ def open_account(body: CreateAccount, user: dict = Depends(get_user), session = 
     if user_id is None:
         return {"error": "User not found"}
     
-    account = Account(user_id=body.user_id, number="", is_principal=True, is_closed=False, creation_date=date.today())
+    account = Account(user_id=body.user_id, number="", name="", iban="", is_principal=True, is_closed=False, creation_date=date.today())
     account.is_principal = can_create_principal_account(user_id, session)
     dt = datetime.now()
-    account.number = "FR2540100001"+str(str(body.user_id)+str(floor(datetime.timestamp(dt)))[3:]).rjust(11, '0')
+    account.number = str(str(body.user_id)+str(floor(datetime.timestamp(dt)))[3:]).rjust(11, '0')
+    if account.is_principal:
+        account.iban = "FR2540100001"+str(str(body.user_id)+str(floor(datetime.timestamp(dt)))[3:]).rjust(11, '0')
+    else:
+        account.iban = ""
 
     session.add(account)
     session.commit()
@@ -31,4 +35,4 @@ def view_account(account_id: int, user: dict = Depends(get_user), session = Depe
     account = session.exec(select(Account).where(Account.id == account_id)).first()
     if account is None:
         return {"error": "Account not found"}
-    return  {"number": account.number, "balance": account.balance, "creation_date": account.creation_date}
+    return  {"number": account.number, "iban": account.iban, "name": account.name ,"balance": account.balance, "creation_date": account.creation_date}
