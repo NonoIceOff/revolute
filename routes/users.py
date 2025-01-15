@@ -1,7 +1,11 @@
+from datetime import date, datetime, timedelta
+from math import floor
 from fastapi import APIRouter, FastAPI, Depends
 from sqlmodel import Session, select 
 from passlib.hash import sha256_crypt
-from .models import User
+
+from routes.dependencies import can_create_principal_account
+from .models import Account, User
 from email_validator import validate_email, EmailNotValidError
 from .config import *
 
@@ -39,4 +43,16 @@ def register(email: str, password: str, lastname: str, firstname: str, session =
     session.add(user)
     session.commit()
     session.refresh(user)
-    return {"token": generate_token(user)}
+
+    token = generate_token(user)
+    
+    # créer un compte principal et rajouter un solde de 100€
+    account = Account(user_id=user.id, name="", iban="", balance=100, is_principal=True, is_closed=False, creation_date=date.today() - timedelta(days=5))
+    account.is_principal = can_create_principal_account(user.id, session)
+    dt = datetime.now()
+    account.iban = "FR2540100001"+str(str(user.id)+str(floor(datetime.timestamp(dt)))[3:]).rjust(11, '0')
+    session.add(account)
+    session.commit()
+    session.refresh(account)
+
+    return {"token": token}
