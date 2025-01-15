@@ -26,7 +26,7 @@ def create_deposit(body: CreateDeposits, user: dict = Depends(get_user), session
             account.balance += body.earn
             session.add(account)
     
-        deposit = Deposits(account=body.account_id, earn=body.earn, motif=body.motif, creation_date=date.today())
+        deposit = Deposits(account=body.account_id, earn=body.earn, motif=body.motif, creation_date=datetime.now())
 
         session.add(deposit)
         session.commit()
