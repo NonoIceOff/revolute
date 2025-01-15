@@ -1,5 +1,6 @@
 from asyncio import sleep
 from fastapi import APIRouter, FastAPI, Depends
+from sqlmodel import desc
 from .schemas import CreateTransactions
 from .models import Transactions
 from .models import Account
@@ -8,7 +9,7 @@ from .config import *
 import time
 
 routerTransactions = APIRouter()
-is_finish = False;
+is_finish = False
 
 @routerTransactions.post("/history")
 def historyTransactions(account_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
