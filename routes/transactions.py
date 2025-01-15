@@ -74,3 +74,12 @@ def cancel_transaction(transaction_id: int, user: dict = Depends(get_user), sess
     session.commit()
     session.refresh(transaction)
     return transaction
+
+
+# bout de story 13 mais c'est pas fini :/
+@routerTransactions.get("/view_transaction")
+def view_transaction(transaction_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
+    transaction = session.exec(select(Transactions).where(Transactions.id == transaction_id)).first()
+    if transaction is None:
+        return {"error": "Transaction not found"}
+    return  {"source_account": transaction.account_by_id, "destination_account": transaction.account_to_id, "price": transaction.balance, "date": transaction.creation_date, "motif": transaction.motif}
