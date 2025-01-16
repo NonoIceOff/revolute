@@ -1,4 +1,4 @@
-from sqlmodel import Session, create_engine, Field, SQLModel, select
+from sqlmodel import Field, SQLModel, select
 from datetime import date, datetime
 
 

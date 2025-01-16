@@ -46,7 +46,7 @@ def transactions(body: CreateTransactions,  user: dict = Depends(get_user), sess
         return {"error": "Vous ne pouvez pas créer de transaction avec un compte qui ne vous appartient pas"}
 
 
-    # accountId_receiver = session.exec(select(Account).where(Account.id == body.account_to_id)).first()
+    accountId_receiver = session.exec(select(Account).where(Account.id == body.account_to_id)).first()
     account_sender = session.exec(select(Account).where(Account.id == body.account_by_id)).first()
 
     if body.balance <= 0:
@@ -62,7 +62,7 @@ def transactions(body: CreateTransactions,  user: dict = Depends(get_user), sess
     session.add(transaction)
     session.commit()
     session.refresh(transaction, account_sender)
-    ceiling_account(account_sender, session)
+    ceiling_account(accountId_receiver, body.balance, session)
     return transaction
 
     

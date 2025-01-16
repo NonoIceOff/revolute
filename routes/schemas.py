@@ -11,7 +11,6 @@ class CreateAccount(BaseModel):
     user_id: int
     name: str
     balance: float
-    is_principal: bool
     is_closed: bool
 
 class CreateTransactions(BaseModel):
