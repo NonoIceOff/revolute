@@ -21,7 +21,7 @@ scheduler = BackgroundScheduler()
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
-    scheduler.add_job(distribution, trigger = "interval", seconds = 30)
+    scheduler.add_job(distribution, trigger = "interval", seconds = 5)
     scheduler.start()
     
 @app.on_event("shutdown")
