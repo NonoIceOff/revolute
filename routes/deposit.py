@@ -33,6 +33,6 @@ def create_deposit(body: CreateDeposits, user: dict = Depends(get_user), session
         session.refresh(deposit)
         session.refresh(account)
         
-        return account, deposit
+        return {"account": account, "deposit": deposit}
     else:
         return {"error": "Account not found"}

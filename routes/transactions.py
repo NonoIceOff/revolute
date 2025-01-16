@@ -1,5 +1,6 @@
 from asyncio import sleep
 from fastapi import APIRouter, FastAPI, Depends
+from sqlmodel import desc
 from .schemas import CreateTransactions
 from .models import Transactions
 from .models import Account
@@ -18,7 +19,7 @@ import time
 
 
 routerTransactions = APIRouter()
-is_finish = False;
+is_finish = False
 
 @routerTransactions.post("/history")
 def historyTransactions(account_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
@@ -86,4 +87,23 @@ def cancel_transaction(transaction_id: int, user: dict = Depends(get_user), sess
     session.add(transaction)
     session.add(account_in_transaction)
     session.commit()
-    return {"message": "Transaction annulée avec succès"}
+    session.refresh(transaction)
+    return transaction
+
+
+# bout de story 13 mais c'est pas fini :/
+@routerTransactions.get("/view_transaction")
+def view_transaction(transaction_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
+    transaction = session.exec(select(Transactions).where(Transactions.id == transaction_id)).first()
+    compte_sender = session.exec(select(Account).where(transaction.account_by_id == Account.id))
+    compte_receiver = session.exec(select(Account).where(transaction.account_to_id == Account.id))
+    user_sender = session.exec(select(User).where(compte_sender.user_id == User.id))
+    user_receiver = session.exec(select(User).where(compte_receiver.user_id == User.id))
+    
+    if transaction is None:
+        return {"error": "Transaction not found"}
+    
+    if user_sender or user_receiver != user["id"]:
+        return {"error": "You are not the sender or the receiver of this transaction"}
+    
+    return  {"source_account": transaction.account_by_id, "destination_account": transaction.account_to_id, "price": transaction.balance, "date": transaction.creation_date, "motif": transaction.motif}
