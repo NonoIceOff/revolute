@@ -70,7 +70,7 @@ def cancel_transaction(transaction_id: int, user: dict = Depends(get_user), sess
 
 
     print(transaction)
-    
+
     if account_in_transaction.user_id != user["id"]:
         return {"error": "Vous n'êtes pas autorisé à annuler cette transaction"}
     
@@ -82,6 +82,7 @@ def cancel_transaction(transaction_id: int, user: dict = Depends(get_user), sess
 
     account_in_transaction.balance += transaction.balance
     transaction.is_chancelled = True
+    transaction.is_confirmed = False
     session.add(transaction)
     session.add(account_in_transaction)
     session.commit()
