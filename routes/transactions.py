@@ -80,6 +80,15 @@ def cancel_transaction(transaction_id: int, user: dict = Depends(get_user), sess
 @routerTransactions.get("/view_transaction")
 def view_transaction(transaction_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
     transaction = session.exec(select(Transactions).where(Transactions.id == transaction_id)).first()
+    compte_sender = session.exec(select(Account).where(transaction.account_by_id == Account.id))
+    compte_receiver = session.exec(select(Account).where(transaction.account_to_id == Account.id))
+    user_sender = session.exec(select(User).where(compte_sender.user_id == User.id))
+    user_receiver = session.exec(select(User).where(compte_receiver.user_id == User.id))
+    
     if transaction is None:
         return {"error": "Transaction not found"}
+    
+    if user_sender or user_receiver != user["id"]:
+        return {"error": "You are not the sender or the receiver of this transaction"}
+    
     return  {"source_account": transaction.account_by_id, "destination_account": transaction.account_to_id, "price": transaction.balance, "date": transaction.creation_date, "motif": transaction.motif}
