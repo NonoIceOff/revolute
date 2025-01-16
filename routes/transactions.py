@@ -23,15 +23,18 @@ is_finish = False
 
 @routerTransactions.post("/history")
 def historyTransactions(account_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
-        history = session.exec(select(Transactions).where(Transactions.account_by_id == user["id"] ).order_by(desc(Transactions.creation_date))).all()
-        print(history)
-        return [{"source_account": historys.account_by_id, "destination_account": historys.account_to_id, "price": historys.balance, "date": historys.creation_date, "motif": historys.motif} for historys in history ] 
+    if user["id"] is None:
+        return {"error": "User not found"}
+    user_id = user["id"]
+    history = session.exec(select(Transactions).where(Transactions.account_by_id == user_id ).order_by(desc(Transactions.creation_date))).all()
+    print(history)
+    return [{"source_account": historys.account_by_id, "destination_account": historys.account_to_id, "price": historys.balance, "date": historys.creation_date, "motif": historys.motif} for historys in history ] 
 
 @routerTransactions.post("/transactions")
 def transactions(body: CreateTransactions,  user: dict = Depends(get_user), session = Depends(get_session)):
-    user_id = user["id"]
-    if user_id is None:
+    if user["id"] is None:
         return {"error": "User not found"}
+    # user_id = user["id"]
     
     if body.account_to_id is None:
         return {"error": "Account not found"}
@@ -47,12 +50,9 @@ def transactions(body: CreateTransactions,  user: dict = Depends(get_user), sess
             return {"error": "T'es pauvre ahahahahah"}
         
 
-        # accountId_receiver.balance += body.balance
         accountId_sender.balance -= body.balance
-        # session.add(accountId_receiver)
         session.add(accountId_sender)
         session.commit()
-        # session.refresh(accountId_receiver)
         session.refresh(accountId_sender)
         transaction = Transactions(account_by_id = body.account_by_id, account_to_id=body.account_to_id, balance= body.balance, motif= body.motif, is_cancelled = False, is_pending= True, is_confirmed=False)
         session.add(transaction)
@@ -66,13 +66,16 @@ def transactions(body: CreateTransactions,  user: dict = Depends(get_user), sess
 
 @routerTransactions.post("/cancel_transaction") 
 def cancel_transaction(transaction_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
+    if user["id"] is None:
+        return {"error": "User not found"}
+    user_id = user["id"]
     transaction = session.exec(select(Transactions).where(Transactions.id == transaction_id)).first()
     account_in_transaction = session.exec(select(Account).where(Account.id == transaction.account_by_id)).first()
 
 
     print(transaction)
 
-    if account_in_transaction.user_id != user["id"]:
+    if account_in_transaction.user_id != user_id:
         return {"error": "Vous n'êtes pas autorisé à annuler cette transaction"}
     
     if transaction is None:
@@ -91,19 +94,21 @@ def cancel_transaction(transaction_id: int, user: dict = Depends(get_user), sess
     return transaction
 
 
-# bout de story 13 mais c'est pas fini :/
 @routerTransactions.get("/view_transaction")
 def view_transaction(transaction_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
+    if user["id"] is None:
+        return {"error": "User not found"}
+    user_id = user["id"]
     transaction = session.exec(select(Transactions).where(Transactions.id == transaction_id)).first()
-    compte_sender = session.exec(select(Account).where(transaction.account_by_id == Account.id))
-    compte_receiver = session.exec(select(Account).where(transaction.account_to_id == Account.id))
-    user_sender = session.exec(select(User).where(compte_sender.user_id == User.id))
-    user_receiver = session.exec(select(User).where(compte_receiver.user_id == User.id))
-    
+    account_sender = session.exec(select(Account).where(Account.id == transaction.account_by_id)).first()
+    account_receiver = session.exec(select(Account).where(Account.id == transaction.account_to_id)).first()
+    user_sender = account_sender.user_id
+    user_receiver = account_receiver.user_id
+
     if transaction is None:
         return {"error": "Transaction not found"}
-    
-    if user_sender or user_receiver != user["id"]:
+
+    if user_sender != user_id or user_receiver != user_id:
         return {"error": "You are not the sender or the receiver of this transaction"}
-    
+
     return  {"source_account": transaction.account_by_id, "destination_account": transaction.account_to_id, "price": transaction.balance, "date": transaction.creation_date, "motif": transaction.motif}

@@ -12,7 +12,7 @@ routerAccount = APIRouter()
 
 @routerAccount.post("/open_account")
 def open_account(body: CreateAccount, user: dict = Depends(get_user), session = Depends(get_session)):
-    if user_id is None:
+    if user["id"] is None:
         return {"error": "User not found"}
     user_id = user["id"]
     
@@ -64,7 +64,7 @@ def close_account(account_id: int, user: dict = Depends(get_user), session: Sess
 
 @routerAccount.get("/view_account")
 def view_account(account_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
-    if user_id is None:
+    if user["id"] is None:
         return {"error": "User not found"}
     user_id = user["id"]
     account = session.exec(select(Account).where(Account.id == account_id, Account.is_closed == False, Account.user_id == user_id)).first()
@@ -76,7 +76,7 @@ def view_account(account_id: int, user: dict = Depends(get_user), session = Depe
 
 @routerAccount.get("/view_accounts")
 def view_accounts(user: dict = Depends(get_user), session = Depends(get_session)):
-    if user_id is None:
+    if user["id"] is None:
         return {"error": "User not found"}
     user_id = user["id"]
     accounts = session.exec(select(Account).where(Account.user_id == user["id"], Account.is_closed == False).order_by(desc(Account.creation_date))).all()

@@ -11,9 +11,9 @@ routerDeposit = APIRouter()
 @routerDeposit.post("/deposit")
 def create_deposit(body: CreateDeposits, user: dict = Depends(get_user), session = Depends(get_session)):
 
-    user_id = user["id"]
-    if user_id is None:
+    if user["id"] is None:
         return {"error": "User not found"}
+    user_id = user["id"]
     
     if body.earn <= 0:
         return {"error": "The balance must be greater than 0"}
