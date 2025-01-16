@@ -5,8 +5,18 @@ from .schemas import CreateTransactions
 from .models import Transactions
 from .models import Account
 from .config import *
-# from .dependencies import cancel_transactions
+from sqlmodel import desc
+from datetime import date, datetime
+
 import time
+
+    #🥝🥝                                    🥝🥝         
+    #🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝
+    #🥝🥝🥝🥝👁️🥝🥝🥝🥝🥝🥝🥝🥝🥝👁️🥝🥝🥝🥝
+    #🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝
+    #🥝🥝🥝🥝🥝🥝🦷🦷🦷🦷🦷🦷🦷🥝🥝🥝🥝🥝🥝
+    #🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝
+
 
 routerTransactions = APIRouter()
 is_finish = False
@@ -36,41 +46,46 @@ def transactions(body: CreateTransactions,  user: dict = Depends(get_user), sess
         if accountId_sender.balance <= 0:
             return {"error": "T'es pauvre ahahahahah"}
         
-        check_canceled_transaction(transaction, body.balance, accountId_receiver, accountId_sender, session)
-        
-        transaction = Transactions(account_by_id = body.account_by_id, account_to_id=body.account_to_id, balance= body.balance, motif= "Non Merci", is_cancelled = False  )
+
+        # accountId_receiver.balance += body.balance
+        accountId_sender.balance -= body.balance
+        # session.add(accountId_receiver)
+        session.add(accountId_sender)
+        session.commit()
+        # session.refresh(accountId_receiver)
+        session.refresh(accountId_sender)
+        transaction = Transactions(account_by_id = body.account_by_id, account_to_id=body.account_to_id, balance= body.balance, motif= body.motif, is_cancelled = False, is_pending= True, is_confirmed=False)
         session.add(transaction)
         session.commit()
         session.refresh(transaction)
         return transaction
-
         
     else:
         return {"error": "Account Not Found"}
     
-def check_canceled_transaction(transaction: Transactions, balance: int, accountId_receiver: Account, accountId_sender: Account, session = Depends(get_session)):
-    start = time.time()
 
-    if start <= 5.0 & transaction.is_chancelled != True :
-        return {"error": "Transaction Canceled"}
-    else:
-        accountId_receiver.balance += balance
-        accountId_sender.balance -= balance
-        session.add(accountId_receiver)
-        session.add(accountId_sender)
-        session.commit()
-        session.refresh(accountId_receiver)
-        session.refresh(accountId_sender)
-
-
-
-@routerTransactions.post("/cancel_transaction")
+@routerTransactions.post("/cancel_transaction") 
 def cancel_transaction(transaction_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
     transaction = session.exec(select(Transactions).where(Transactions.id == transaction_id)).first()
+    account_in_transaction = session.exec(select(Account).where(Account.id == transaction.account_by_id)).first()
+
+
+    print(transaction)
+
+    if account_in_transaction.user_id != user["id"]:
+        return {"error": "Vous n'êtes pas autorisé à annuler cette transaction"}
+    
     if transaction is None:
         return {"error": "Transaction not found"}
+    
+    if transaction.is_pending == False:
+        return {"error": "Transaction déjà confirmée"}
+
+    account_in_transaction.balance += transaction.balance
     transaction.is_chancelled = True
+    transaction.is_confirmed = False
     session.add(transaction)
+    session.add(account_in_transaction)
     session.commit()
     session.refresh(transaction)
     return transaction

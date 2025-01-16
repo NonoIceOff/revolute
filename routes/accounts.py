@@ -16,7 +16,8 @@ def open_account(body: CreateAccount, user: dict = Depends(get_user), session = 
         return {"error": "User not found"}
     user_id = user["id"]
     
-    account = Account(user_id=user_id, name="", iban="", balance=body.balance, is_principal=True, is_closed=False, creation_date=date.today() - timedelta(days=5))
+    account = Account(user_id=body.user_id, name=body.name, iban="", balance=body.balance, is_principal=True, is_closed=False, creation_date=date.today() - timedelta(days=5))
+
     account.is_principal = can_create_principal_account(user_id, session)
     dt = datetime.now()
     account.iban = "FR2540100001"+str(str(body.user_id)+str(floor(datetime.timestamp(dt)))[3:]).rjust(11, '0')
