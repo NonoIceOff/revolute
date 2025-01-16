@@ -4,19 +4,20 @@ from .models import Account, Deposits
 from .config import *
 from .dependencies import can_create_principal_account
 from datetime import date, datetime
+from fastapi import FastAPI, HTTPException
 from math import floor
 
 routerDeposit = APIRouter()
 
-@routerDeposit.post("/deposit")
+@routerDeposit.post("/deposit", tags=["Deposits"])
 def create_deposit(body: CreateDeposits, user: dict = Depends(get_user), session = Depends(get_session)):
 
     if user["id"] is None:
-        return {"error": "User not found"}
-    user_id = user["id"]
+        raise HTTPException(status_code=404, detail="User not found")
+        
     
     if body.earn <= 0:
-        return {"error": "The balance must be greater than 0"}
+        raise HTTPException(status_code=404, detail="The balance must be greater than 0")
     
     if body.account_id:
         account = session.exec(select(Account).where(Account.id == body.account_id, Account.is_principal == True)).first()

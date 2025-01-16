@@ -3,7 +3,6 @@ from .models import Transactions
 from .models import Account
 from .config import *
 from datetime import datetime
-from .dependencies import ceiling_account
 
 def distribution():
     with Session(engine) as session:

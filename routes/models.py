@@ -1,4 +1,4 @@
-from sqlmodel import Field, SQLModel, select
+from sqlmodel import Field, SQLModel
 from datetime import date, datetime
 
 
