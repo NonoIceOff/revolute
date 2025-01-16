@@ -30,14 +30,18 @@ def register(email: str, password: str, lastname: str, firstname: str, session =
     if user:= session.exec(select(User).where(User.email == email)).first():
         return {"error": "User already exists"}
     user = User(email=email, password=sha256_crypt.hash(password), lastname=lastname, firstname=firstname)
-    account = Account(user_id=user.id, name="", iban="", balance=100, is_principal=True, is_closed=False, creation_date=date.today() - timedelta(days=5))
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    token = generate_token(user)
+    
+    # créer un compte principal et rajouter un solde de 100€
+    account = Account(user_id=user.id, name="Compte Depot", iban="", balance=100, is_principal=True, is_closed=False, creation_date=date.today() - timedelta(days=5))
     account.is_principal = can_create_principal_account(user.id, session)
     dt = datetime.now()
     account.iban = "FR2540100001"+str(str(user.id)+str(floor(datetime.timestamp(dt)))[3:]).rjust(11, '0')
-    
-    session.add(user)
     session.add(account)
     session.commit()
-    session.refresh(account, user)
-    token = generate_token(user)
+    session.refresh(account)
     return {"token": token}
