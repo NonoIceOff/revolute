@@ -22,7 +22,7 @@ def create_deposit(body: CreateDeposits, user: dict = Depends(get_user), session
     if body.account_id:
         account = session.exec(select(Account).where(Account.id == body.account_id, Account.is_principal == True)).first()
         if account is None:
-            return {"error": "Account not found or its not a principal account"}
+            raise HTTPException(status_code=404, detail="Account not found or its not a principal account")
         else:
             account.balance += body.earn
             session.add(account)
@@ -36,4 +36,4 @@ def create_deposit(body: CreateDeposits, user: dict = Depends(get_user), session
         
         return {"account": account, "deposit": deposit}
     else:
-        return {"error": "Account not found"}
+        raise HTTPException(status_code=404, detail="Account not found")

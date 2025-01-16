@@ -71,7 +71,7 @@ def view_account(account_id: int, user: dict = Depends(get_user), session = Depe
     account = session.exec(select(Account).where(Account.id == account_id, Account.is_closed == False, Account.user_id == user["id"])).first()
     
     if account is None:
-        raise HTTPException(status_code=404, detail="Account not found")
+        raise HTTPException(status_code=404, detail="No account found owned by you")
     if account.is_closed:
         raise HTTPException(status_code=404, detail="Account is closed")
     
@@ -85,6 +85,6 @@ def view_accounts(user: dict = Depends(get_user), session = Depends(get_session)
     
     accounts = session.exec(select(Account).where(Account.user_id == user["id"], Account.is_closed == False).order_by(desc(Account.creation_date))).all()
     if accounts is None:
-        raise HTTPException(status_code=404, detail="Account not found")
+        raise HTTPException(status_code=404, detail="No account found owned by you")
     
     return [{"iban": account.iban, "name": account.name ,"balance": account.balance, "creation_date": account.creation_date} for account in accounts]

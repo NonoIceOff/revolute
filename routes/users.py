@@ -4,6 +4,8 @@ from passlib.hash import sha256_crypt
 from math import floor
 from fastapi import APIRouter,  Depends
 from datetime import date, datetime, timedelta
+
+from routes.schemas import CreateUser
 from .models import Account, User
 from fastapi import HTTPException
 from .config import *
@@ -13,7 +15,7 @@ router = APIRouter()
 @router.get("/users")
 def read_users(session = Depends(get_session)):
     users = session.exec(select(User)).all()
-    return users
+    return [{"id": user.id ,"email": user.email, "lastname": user.lastname, "firstname": user.firstname} for user in users]
 
 @router.post("/login", tags=["Authentification"])
 def login(email: str, password: str, session = Depends(get_session)):
@@ -21,15 +23,15 @@ def login(email: str, password: str, session = Depends(get_session)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if not sha256_crypt.verify(password, user.password):
-        return {"error": "Invalid password"}
+        raise HTTPException(status_code=404, detail="Invalid password")
     return {"token": generate_token(user)}
     
 
 @router.post("/register", tags=["Authentification"])
-def register(email: str, password: str, lastname: str, firstname: str, session = Depends(get_session)):
-    if user:= session.exec(select(User).where(User.email == email)).first():
-        return {"error": "User already exists"}
-    user = User(email=email, password=sha256_crypt.hash(password), lastname=lastname, firstname=firstname)
+def register(body: CreateUser, session = Depends(get_session)):
+    if user:= session.exec(select(User).where(User.email == body.email)).first():
+        raise HTTPException(status_code=404, detail="User already exists")
+    user = User(email=body.email, password=sha256_crypt.hash(body.password), lastname=body.lastname, firstname=body.firstname)
     session.add(user)
     session.commit()
     session.refresh(user)

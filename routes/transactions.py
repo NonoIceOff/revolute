@@ -40,19 +40,19 @@ def transactions(body: CreateTransactions,  user: dict = Depends(get_user), sess
     user_account_receiver = session.exec(select(Account).where(Account.id == body.account_to_id)).first()
 
     if user_account_sender.user_id != user_account_receiver.user_id:
-        return {"error": "Vous ne pouvez pas faire de virement. Les deux comptes utilisateurs doivent être les mêmes"}
+        raise HTTPException(status_code=404, detail="You cannot make a transfer. The two user accounts must be the same")
     if user_account_sender.user_id != user["id"]:
-        return {"error": "Vous ne pouvez pas créer de transaction avec un compte qui ne vous appartient pas"}
+        raise HTTPException(status_code=404, detail="You cannot create a transaction with an account that does not belong to you")
 
 
     accountId_receiver = session.exec(select(Account).where(Account.id == body.account_to_id)).first()
     account_sender = session.exec(select(Account).where(Account.id == body.account_by_id)).first()
 
     if body.balance <= 0:
-        return {"error": "Metre un montant positif"}
+        raise HTTPException(status_code=404, detail="You cannot make a transfer with a negative amount")
     
     if account_sender.balance <= body.balance:
-        return {"error": "Solde insuffisant"}
+        raise HTTPException(status_code=404, detail="Insufficient balance")
     
     
     account_sender.balance -= body.balance
@@ -72,16 +72,20 @@ def cancel_transaction(transaction_id: int, user: dict = Depends(get_user), sess
         raise HTTPException(status_code=404, detail="User not found")
     
     transaction = session.exec(select(Transactions).where(Transactions.id == transaction_id)).first()
-    account_in_transaction = session.exec(select(Account).where(Account.id == transaction.account_by_id)).first()
 
-    if account_in_transaction.user_id != user["id"]:
-        raise HTTPException(status_code=404, detail="Vous n'êtes pas autorisé à annuler cette transaction")
-    
     if transaction is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
     
     if transaction.is_pending == False:
-        raise HTTPException(status_code=404, detail="Transaction déjà confirmée")
+        raise HTTPException(status_code=404, detail="Transaction already confirmed")
+    
+    account_in_transaction = session.exec(select(Account).where(Account.id == transaction.account_by_id)).first()
+
+    if account_in_transaction is None:
+        raise HTTPException(status_code=404, detail="Account not found")
+
+    if account_in_transaction.user_id != user["id"]:
+        raise HTTPException(status_code=404, detail="You are not the owner of the account")
 
     account_in_transaction.balance += transaction.balance
     transaction.is_chancelled = True
