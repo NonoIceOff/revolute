@@ -18,17 +18,5 @@ def distribution():
                 session.add(transaction)
         
         session.commit()
-    return {"message": "Aucune transaction en attente"}
+    return {"message": "No transactions in pending"}
        
-       
-def surplus(transaction: Transactions, surplus: int, account_receiver: Account, account_sender: Account, session = Depends(get_session)):
-    user = account_receiver.user
-    principal_account = session.exec(select(Account).where(Account.user_id == user.id, Account.is_principal == True)).first()
-    if principal_account:
-        principal_account.balance += surplus
-        session.add(principal_account)
-        session.commit()
-        session.refresh(principal_account)
-        return {"transaction": transaction, "message": "Surplus ajouté au compte principal"}
-    else:
-        return {"transaction": transaction, "message": "Compte principal non trouvé"}

@@ -5,7 +5,7 @@ from math import floor
 from fastapi import APIRouter,  Depends
 from datetime import date, datetime, timedelta
 
-from routes.schemas import CreateUser
+from routes.schemas import CreateUser, LoginUser
 from .models import Account, User
 from fastapi import HTTPException
 from .config import *
@@ -18,11 +18,11 @@ def read_users(session = Depends(get_session)):
     return [{"id": user.id ,"email": user.email, "lastname": user.lastname, "firstname": user.firstname} for user in users]
 
 @router.post("/login", tags=["Authentification"])
-def login(email: str, password: str, session = Depends(get_session)):
-    user = session.exec(select(User).where(User.email == email)).first()
+def login(body: LoginUser, session = Depends(get_session)):
+    user = session.exec(select(User).where(User.email == body.email)).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    if not sha256_crypt.verify(password, user.password):
+    if not sha256_crypt.verify(body.password, user.password):
         raise HTTPException(status_code=404, detail="Invalid password")
     return {"token": generate_token(user)}
     
@@ -38,7 +38,6 @@ def register(body: CreateUser, session = Depends(get_session)):
 
     token = generate_token(user)
     
-    # créer un compte principal et rajouter un solde de 100€
     account = Account(user_id=user.id, name="Compte Depot", iban="", balance=100, is_principal=True, is_closed=False, creation_date=date.today() - timedelta(days=5))
     account.is_principal = can_create_principal_account(user.id, session)
     dt = datetime.now()
