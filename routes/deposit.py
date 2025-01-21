@@ -1,39 +1,57 @@
 from fastapi import APIRouter, FastAPI, Depends
 from .schemas import CreateDeposits
-from .models import Account, Deposits
+from .models import Account, Deposits, Transactions
 from .config import *
-from .dependencies import can_create_principal_account
+from .dependencies import ceiling_account
 from datetime import date, datetime
 from fastapi import FastAPI, HTTPException
 from math import floor
+from sqlmodel import Session, select 
+
 
 routerDeposit = APIRouter()
 
-@routerDeposit.post("/deposit", tags=["Deposits"])
-def create_deposit(body: CreateDeposits, user: dict = Depends(get_user), session = Depends(get_session)):
-
-    if user["id"] is None:
-        raise HTTPException(status_code=404, detail="User not found")
-        
+def ceiling_acc(account: Account, sold: float, session = Session):
+    account.balance += sold
+    deposit = Deposits(account=account.id, earn=sold, motif="Depot", creation_date=datetime.now())
     
+    session.add(deposit)
+    session.commit()
+    session.refresh(deposit)
+
+    if (account.is_principal == False):
+        surplus = account.balance - 50000
+        if(surplus > 0):
+            principal_account = session.exec(select(Account).where(Account.user_id == account.user_id, Account.is_principal == True)).first()
+            account.balance = 50000
+            ###
+            transaction = Transactions(account_by_id = account.id, account_to_id=principal_account.id, balance = surplus, motif= "Surplus", is_cancelled = False, is_pending= True, is_confirmed=False) 
+            ###
+            session.add(transaction)
+            session.add(account)
+            session.commit()
+            session.refresh(principal_account, transaction)
+            return("surplus ajouter au compte principal", surplus)
+        else:
+            return("sold mis à jour", account.balance)
+    else:
+        session.add(account)
+        session.commit()
+        session.refresh(account)
+        
+
+
+@routerDeposit.post("/deposit", tags=["Deposits"])
+def create_deposit(body: CreateDeposits, session = Depends(get_session)):
+    if body.account_id is None:
+        raise HTTPException(status_code=404, detail="Account not found")
+
     if body.earn <= 0:
         raise HTTPException(status_code=404, detail="The balance must be greater than 0")
     
     if body.account_id:
-        account = session.exec(select(Account).where(Account.id == body.account_id, Account.is_principal == True)).first()
-        if account is None:
-            raise HTTPException(status_code=404, detail="Account not found or its not a principal account")
-        else:
-            account.balance += body.earn
-            session.add(account)
-    
-        deposit = Deposits(account=body.account_id, earn=body.earn, motif=body.motif, creation_date=datetime.now())
+        account = session.exec(select(Account).where(Account.id == body.account_id)).first()
 
-        session.add(deposit)
-        session.commit()
-        session.refresh(deposit)
-        session.refresh(account)
-        
-        return {"account": account, "deposit": deposit}
-    else:
-        raise HTTPException(status_code=404, detail="Account not found")
+        ceiling_acc(account, body.earn, session)
+
+        return {"message": "Deposit created successfully", "data": body}

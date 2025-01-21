@@ -13,8 +13,6 @@ routerAccount = APIRouter()
 
 @routerAccount.post("/open_account", tags=["Accounts"])
 def open_account(body: CreateAccount, user: dict = Depends(get_user), session = Depends(get_session)):
-    if user["id"] is None:
-        raise HTTPException(status_code=404, detail="User not found")
 
     account = Account(user_id=body.user_id, name=body.name, iban="", balance=body.balance, is_principal=True, is_closed=False, creation_date=date.today() - timedelta(days=5))
 
@@ -33,9 +31,6 @@ def open_account(body: CreateAccount, user: dict = Depends(get_user), session = 
 
 @routerAccount.post("/close_account", tags=["Accounts"])
 def close_account(account_id: int, user: dict = Depends(get_user), session: Session = Depends(get_session)):
-    if user["id"] is None:
-        raise HTTPException(status_code=404, detail="User not found")
-
     
     account = session.exec(select(Account).where(Account.id == account_id)).first()
     if not account:
@@ -65,9 +60,6 @@ def close_account(account_id: int, user: dict = Depends(get_user), session: Sess
 
 @routerAccount.get("/view_account", tags=["Accounts"])
 def view_account(account_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
-    if user["id"] is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    
     account = session.exec(select(Account).where(Account.id == account_id, Account.is_closed == False, Account.user_id == user["id"])).first()
     
     if account is None:
@@ -80,9 +72,6 @@ def view_account(account_id: int, user: dict = Depends(get_user), session = Depe
 
 @routerAccount.get("/view_accounts", tags=["Accounts"])
 def view_accounts(user: dict = Depends(get_user), session = Depends(get_session)):
-    if user["id"] is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    
     accounts = session.exec(select(Account).where(Account.user_id == user["id"], Account.is_closed == False).order_by(desc(Account.creation_date))).all()
     if accounts is None:
         raise HTTPException(status_code=404, detail="No account found owned by you")

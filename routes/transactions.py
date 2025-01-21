@@ -8,7 +8,7 @@ from fastapi import HTTPException
 from sqlmodel import desc
 
 
-    #🥝🥝                                    🥝🥝         
+    #🥝🥝                                      🥝🥝         
     #🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝
     #🥝🥝🥝🥝👁️🥝🥝🥝🥝🥝🥝🥝🥝🥝👁️🥝🥝🥝🥝
     #🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝🥝
@@ -21,18 +21,12 @@ is_finish = False
 
 @routerTransactions.post("/history", tags=["transactions"])
 def historyTransactions(user: dict = Depends(get_user), session = Depends(get_session)):
-    if user["id"] is None:
-        return {"error": "User not found"}
-    
     user_id = user["id"]
     history = session.exec(select(Transactions).where(Transactions.account_by_id == user_id ).order_by(desc(Transactions.creation_date))).all()
     return [{"source_account": historys.account_by_id, "destination_account": historys.account_to_id, "price": historys.balance, "date": historys.creation_date, "motif": historys.motif} for historys in history ] 
 
 @routerTransactions.post("/transactions", tags=["transactions"])
 def transactions(body: CreateTransactions,  user: dict = Depends(get_user), session = Depends(get_session)):
-    if user["id"] is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    
     if body.account_to_id is None:
          raise HTTPException(status_code=404, detail="Account not found")
     
@@ -68,24 +62,17 @@ def transactions(body: CreateTransactions,  user: dict = Depends(get_user), sess
 
 @routerTransactions.post("/cancel_transaction", tags=["transactions"]) 
 def cancel_transaction(transaction_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
-    if user["id"] is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    
     transaction = session.exec(select(Transactions).where(Transactions.id == transaction_id)).first()
+    account_in_transaction = session.exec(select(Account).where(Account.id == transaction.account_by_id)).first()
 
+    if account_in_transaction.user_id != user["id"]:
+        raise HTTPException(status_code=404, detail="You're not allowed to cancel this transaction")
+    
     if transaction is None:
         raise HTTPException(status_code=404, detail="Transaction not found")
     
     if transaction.is_pending == False:
         raise HTTPException(status_code=404, detail="Transaction already confirmed")
-    
-    account_in_transaction = session.exec(select(Account).where(Account.id == transaction.account_by_id)).first()
-
-    if account_in_transaction is None:
-        raise HTTPException(status_code=404, detail="Account not found")
-
-    if account_in_transaction.user_id != user["id"]:
-        raise HTTPException(status_code=404, detail="You are not the owner of the account")
 
     account_in_transaction.balance += transaction.balance
     transaction.is_chancelled = True
@@ -101,9 +88,6 @@ def cancel_transaction(transaction_id: int, user: dict = Depends(get_user), sess
 
 @routerTransactions.get("/view_transaction", tags=["transactions"])
 def view_transaction(transaction_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
-    if user["id"] is None:
-        raise HTTPException(status_code=404, detail="User not found")
-
     transaction = session.exec(select(Transactions).where(Transactions.id == transaction_id)).first()
     account_sender = session.exec(select(Account).where(Account.id == transaction.account_by_id)).first()
     account_receiver = session.exec(select(Account).where(Account.id == transaction.account_to_id)).first()

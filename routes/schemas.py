@@ -6,6 +6,10 @@ class CreateUser(BaseModel):
     email: EmailStr
     password: str
 
+class LoginUser(BaseModel):
+    firstname: str
+    password: str
+
 class CreateAccount(BaseModel):
     user_id: int
     name: str

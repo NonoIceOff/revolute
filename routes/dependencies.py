@@ -5,7 +5,7 @@ from .models import Account, Transactions
 def can_create_principal_account(user_id : int, session = Session)-> bool:
     return not session.exec(select(Account.is_principal).where(Account.user_id == user_id, Account.is_principal == True)).first()
 
-def ceiling_account(account: Account, transaction: int, session = Session):
+def ceiling_account(account: Account, transaction: float, session = Session):
     if (account.is_principal == False):
         principal_account = session.exec(select(Account).where(Account.user_id == account.user_id, Account.is_principal == True)).first()
         if (account.balance + transaction > 50000):
