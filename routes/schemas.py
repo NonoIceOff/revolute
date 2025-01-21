@@ -22,6 +22,12 @@ class CreateTransactions(BaseModel):
     balance: float
     motif: str
 
+class CreateVirements(BaseModel):
+    account_by_id: int
+    account_to_id: int
+    balance: float
+    motif: str
+
 class CreateDeposits(BaseModel):
     account_id: int
     earn: float

@@ -32,6 +32,17 @@ class Transactions(SQLModel, table=True):
     is_pending: bool = Field(default=False)
     is_confirmed: bool = Field(default=False)
 
+class Virements(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    account_by_id: int = Field(default=None, foreign_key="account.id")
+    account_to_id: int = Field(default=None, foreign_key="account.id")
+    balance: float = Field(default=0)
+    motif: str | None = Field(default=None)
+    creation_date: datetime = Field(default=datetime.now())
+    is_chancelled: bool = Field(default=False)
+    is_pending: bool = Field(default=False)
+    is_confirmed: bool = Field(default=False)
+
 class Deposits(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     account: int = Field(default=None, foreign_key="account.id")

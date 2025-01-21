@@ -19,7 +19,7 @@ from sqlmodel import desc
 routerTransactions = APIRouter()
 is_finish = False
 
-@routerTransactions.post("/history", tags=["transactions"])
+@routerTransactions.post("/transactions/history", tags=["transactions"])
 def historyTransactions(user: dict = Depends(get_user), session = Depends(get_session)):
     user_id = user["id"]
     history = session.exec(select(Transactions).where(Transactions.account_by_id == user_id ).order_by(desc(Transactions.creation_date))).all()
@@ -57,10 +57,9 @@ def transactions(body: CreateTransactions,  user: dict = Depends(get_user), sess
     session.refresh(transaction, account_sender)
     ceiling_account(accountId_receiver, body.balance, session)
     return transaction
-
     
 
-@routerTransactions.post("/cancel_transaction", tags=["transactions"]) 
+@routerTransactions.post("/transaction/cancel", tags=["transactions"]) 
 def cancel_transaction(transaction_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
     transaction = session.exec(select(Transactions).where(Transactions.id == transaction_id)).first()
     account_in_transaction = session.exec(select(Account).where(Account.id == transaction.account_by_id)).first()
@@ -86,7 +85,7 @@ def cancel_transaction(transaction_id: int, user: dict = Depends(get_user), sess
     return transaction
 
 
-@routerTransactions.get("/view_transaction", tags=["transactions"])
+@routerTransactions.get("/transaction/view", tags=["transactions"])
 def view_transaction(transaction_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
     transaction = session.exec(select(Transactions).where(Transactions.id == transaction_id)).first()
     account_sender = session.exec(select(Account).where(Account.id == transaction.account_by_id)).first()

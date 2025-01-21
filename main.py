@@ -4,6 +4,7 @@ from routes.users import router
 from routes.accounts import routerAccount
 from routes.deposit import routerDeposit
 from routes.transactions import routerTransactions
+from routes.virements import routerVirements
 from apscheduler.schedulers.background import BackgroundScheduler
 from routes.cronjobs import distribution
 
@@ -14,6 +15,7 @@ app.include_router(router)
 app.include_router(routerAccount)
 app.include_router(routerDeposit)
 app.include_router(routerTransactions)
+app.include_router(routerVirements)
 
 scheduler = BackgroundScheduler()
 
