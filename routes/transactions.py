@@ -22,7 +22,7 @@ is_finish = False
 @routerTransactions.post("/transactions/history", tags=["transactions"])
 def historyTransactions(user: dict = Depends(get_user), session = Depends(get_session)):
     user_id = user["id"]
-    history = session.exec(select(Transactions).where(Transactions.account_by_id == user_id ).order_by(desc(Transactions.creation_date))).all()
+    history = session.exec(select(Transactions).where(Transactions.account_by_id == user_id).order_by(desc(Transactions.creation_date))).all()
     return [{"source_account": historys.account_by_id, "destination_account": historys.account_to_id, "price": historys.balance, "date": historys.creation_date, "motif": historys.motif} for historys in history ] 
 
 @routerTransactions.post("/transactions", tags=["transactions"])

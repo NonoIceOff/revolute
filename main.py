@@ -6,7 +6,7 @@ from routes.deposit import routerDeposit
 from routes.transactions import routerTransactions
 from routes.virements import routerVirements
 from apscheduler.schedulers.background import BackgroundScheduler
-from routes.cronjobs import distribution
+from routes.cronjobs import distribution_transactions, distribution_virements
 
 
 # Models
@@ -23,7 +23,8 @@ scheduler = BackgroundScheduler()
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
-    scheduler.add_job(distribution, trigger = "interval", seconds = 5)
+    scheduler.add_job(distribution_transactions, trigger = "interval", seconds = 5)
+    scheduler.add_job(distribution_virements, trigger = "interval", seconds = 5)
     scheduler.start()
     
 @app.on_event("shutdown")

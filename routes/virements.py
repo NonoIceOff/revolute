@@ -24,6 +24,12 @@ def virements(body: CreateVirements,  user: dict = Depends(get_user), session = 
     user_account_sender = session.exec(select(Account).where(Account.id == body.account_by_id)).first()
     user_account_receiver = session.exec(select(Account).where(Account.id == body.account_to_id)).first()
 
+    if user_account_receiver == user_account_sender:
+        raise HTTPException(status_code=404, detail="Vous ne pouvez pas faire de virement avec le même compte.")
+    
+    if user_account_receiver.user_id == user_account_sender.user_id:
+        raise HTTPException(status_code=404, detail="Vous ne pouvez pas faire de virement vers un de vos comptes. Utilisez plutôt une transaction.")
+
     if user_account_sender.user_id != user["id"]:
         raise HTTPException(status_code=404, detail="You cannot create a virements with an account that does not belong to you")
 

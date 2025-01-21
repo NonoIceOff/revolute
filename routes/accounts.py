@@ -14,9 +14,12 @@ routerAccount = APIRouter()
 @routerAccount.post("/open_account", tags=["Accounts"])
 def open_account(body: CreateAccount, user: dict = Depends(get_user), session = Depends(get_session)):
 
-    account = Account(user_id=body.user_id, name=body.name, iban="", balance=body.balance, is_principal=True, is_closed=False, creation_date=date.today() - timedelta(days=5))
+    account = Account(user_id=body.user_id, name=body.name, iban="", balance=body.balance, is_principal=True, is_closed=False, creation_date=date.today() - timedelta(days=5), type_id=1)
 
     account.is_principal = can_create_principal_account(user["id"], session)
+
+    if account.is_principal == False:
+        account.type_id = 5 # Type "Other"
 
     if account.balance > 50000 and account.is_principal == False:
         raise HTTPException(status_code=404, detail="Secondary account must have a maximum balance of 50000")
@@ -61,19 +64,37 @@ def close_account(account_id: int, user: dict = Depends(get_user), session: Sess
 @routerAccount.get("/view_account", tags=["Accounts"])
 def view_account(account_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
     account = session.exec(select(Account).where(Account.id == account_id, Account.is_closed == False, Account.user_id == user["id"])).first()
+    type_name = session.exec(select(AccountTypes).where(AccountTypes.id == account.type_id)).first()
     
     if account is None:
         raise HTTPException(status_code=404, detail="No account found owned by you")
     if account.is_closed:
         raise HTTPException(status_code=404, detail="Account is closed")
     
-    return  {"iban": account.iban, "name": account.name ,"balance": account.balance, "creation_date": account.creation_date}
+    return  {"iban": account.iban, "name": account.name ,"balance": account.balance, "creation_date": account.creation_date, "type": type_name.name}
 
 
 @routerAccount.get("/view_accounts", tags=["Accounts"])
-def view_accounts(user: dict = Depends(get_user), session = Depends(get_session)):
-    accounts = session.exec(select(Account).where(Account.user_id == user["id"], Account.is_closed == False).order_by(desc(Account.creation_date))).all()
-    if accounts is None:
+def view_accounts(user: dict = Depends(get_user), session: Session = Depends(get_session)):
+    accounts = session.exec(
+        select(Account).where(
+            Account.user_id == user["id"],
+            Account.is_closed == False
+        ).order_by(Account.creation_date.desc())
+    ).all()
+    
+    if not accounts:
         raise HTTPException(status_code=404, detail="No account found owned by you")
     
-    return [{"iban": account.iban, "name": account.name ,"balance": account.balance, "creation_date": account.creation_date} for account in accounts]
+    account_details = []
+    for account in accounts:
+        type_name = session.exec(select(AccountTypes).where(AccountTypes.id == account.type_id)).first()
+        account_details.append({
+            "iban": account.iban,
+            "name": account.name,
+            "balance": account.balance,
+            "creation_date": account.creation_date,
+            "type": type_name.name
+        })
+    
+    return account_details

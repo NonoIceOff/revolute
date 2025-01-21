@@ -1,4 +1,4 @@
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 from datetime import date, datetime
 
 
@@ -9,10 +9,14 @@ class User(SQLModel, table=True):
     email: str = Field(min_length=1, unique=True, max_length=255)
     password: str = Field(min_length=1, max_length=255)
 
+class AccountTypes(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    name: str = Field(min_length=1, max_length=255)
 
 class Account(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
+    type_id: int = Field(foreign_key="accounttypes.id")
     name: str = Field(min_length=1, max_length=255)
     iban: str = Field(max_length=255)
     balance: float = Field(default=0)

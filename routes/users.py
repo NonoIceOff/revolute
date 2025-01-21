@@ -38,7 +38,7 @@ def register(body: CreateUser, session = Depends(get_session)):
 
     token = generate_token(user)
     
-    account = Account(user_id=user.id, name="Compte Depot", iban="", balance=100, is_principal=True, is_closed=False, creation_date=date.today() - timedelta(days=5))
+    account = Account(user_id=user.id, name="Compte Depot", iban="", balance=100, is_principal=True, is_closed=False, creation_date=date.today() - timedelta(days=5), type_id=1)
     account.is_principal = can_create_principal_account(user.id, session)
     dt = datetime.now()
     account.iban = "FR2540100001"+str(str(user.id)+str(floor(datetime.timestamp(dt)))[3:]).rjust(11, '0')

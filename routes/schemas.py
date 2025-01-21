@@ -7,11 +7,12 @@ class CreateUser(BaseModel):
     password: str
 
 class LoginUser(BaseModel):
-    firstname: str
+    email: EmailStr
     password: str
 
 class CreateAccount(BaseModel):
     user_id: int
+    type_id: int
     name: str
     balance: float
     is_closed: bool
