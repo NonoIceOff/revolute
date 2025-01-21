@@ -7,6 +7,7 @@ from routes.transactions import routerTransactions
 from routes.virements import routerVirements
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi.middleware.cors import CORSMiddleware
+from routes.cronjobs import distribution_transactions, distribution_virements
 
 
 # Models
