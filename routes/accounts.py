@@ -19,7 +19,7 @@ def open_account(body: CreateAccount, user: dict = Depends(get_user), session = 
     account.is_principal = can_create_principal_account(user["id"], session)
 
     if account.is_principal == False:
-        account.type_id = 5 # Type "Other"
+        account.type_id = 2 # Type "Epargne"
 
     if account.balance > 50000 and account.is_principal == False:
         raise HTTPException(status_code=404, detail="Secondary account must have a maximum balance of 50000")

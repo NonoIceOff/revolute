@@ -33,7 +33,7 @@ def generate_token(user: User):
 
 def insert_accounts_types():
     with Session(engine) as session:
-        account_types = ["Principal", "Livret A", "Voiture", "Maison", "Autre"]
+        account_types = ["Courant", "Epargne", "Autre"]
         existing_types = session.exec(select(AccountTypes).where(AccountTypes.name.in_(account_types))).all()
         existing_type_names = {account_type.name for account_type in existing_types}
 
