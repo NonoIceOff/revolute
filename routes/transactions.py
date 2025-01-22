@@ -1,3 +1,4 @@
+from datetime import date, datetime
 from fastapi import APIRouter, Depends
 from sqlmodel import desc
 from .schemas import CreateTransactions
@@ -120,7 +121,7 @@ def transactions(body: CreateTransactions,  user: dict = Depends(get_user), sess
     
     
     account_sender.balance -= body.balance
-    transaction = Transactions(account_by_id = body.account_by_id, account_to_id=body.account_to_id, balance= body.balance, motif= body.motif, is_cancelled = False, is_pending= True, is_confirmed=False)
+    transaction = Transactions(account_by_id = body.account_by_id, account_to_id=body.account_to_id, balance= body.balance, motif= body.motif, is_cancelled = False, is_pending= True, is_confirmed=False, creation_date=datetime.now())
     session.add(account_sender)
     session.add(transaction)
     session.commit()
