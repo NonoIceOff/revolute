@@ -53,3 +53,17 @@ class Deposits(SQLModel, table=True):
     earn: float = Field(default=0)
     motif: str = Field(max_length=255)
     creation_date: datetime = Field(default=datetime.now())
+
+class Beneficiary(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    user_account_beneficiary: int = Field(default=None, foreign_key="account.id")
+    creation_date: datetime = Field(default=datetime.now())
+
+class Prelevements(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id")
+    amount: float = Field(default=0)
+    frequency: int = Field(default=0)
+    account_to_id: int = Field(default=None, foreign_key="account.id")
+    creation_date: datetime = Field(default=datetime.now())

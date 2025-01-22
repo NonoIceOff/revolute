@@ -23,11 +23,22 @@ class CreateTransactions(BaseModel):
     balance: float
     motif: str
 
+class CreatePrelevement(BaseModel):
+    account_by_id: int
+    account_to_id: int
+    balance: float
+    frequency: int
+
 class CreateVirements(BaseModel):
     account_by_id: int
     account_to_id: int
     balance: float
     motif: str
+
+class CreateBeneficiary(BaseModel):
+    user_id: int
+    iban: str
+    user_account_beneficiary: int
 
 class CreateDeposits(BaseModel):
     account_id: int
