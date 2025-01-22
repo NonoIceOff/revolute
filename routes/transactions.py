@@ -19,12 +19,51 @@ from sqlmodel import desc
 routerTransactions = APIRouter()
 is_finish = False
 
+## Transactions pour tout l'utilisateur
 @routerTransactions.post("/transactions/history", tags=["transactions"])
-def historyTransactions(user: dict = Depends(get_user), session = Depends(get_session)):
+def historyTransactions(user: dict = Depends(get_user), session: Session = Depends(get_session)):
     user_id = user["id"]
-    history = session.exec(select(Transactions).where(Transactions.account_by_id == user_id).order_by(desc(Transactions.creation_date))).all()
-    return [{"source_account": historys.account_by_id, "destination_account": historys.account_to_id, "price": historys.balance, "date": historys.creation_date, "motif": historys.motif} for historys in history ] 
+    
+    # Récupérer tous les comptes de l'utilisateur
+    accounts = session.exec(select(Account).where(Account.user_id == user_id)).all()
+    account_ids = [account.id for account in accounts]
+    
+    # Récupérer toutes les transactions où l'utilisateur est impliqué
+    history = session.exec(
+        select(Transactions).where(
+            (Transactions.account_by_id.in_(account_ids)) | (Transactions.account_to_id.in_(account_ids))
+        ).order_by(desc(Transactions.creation_date))
+    ).all()
+    
+    if not history:
+        raise HTTPException(status_code=404, detail="No transactions found for this user")
 
+    transactions_list = []
+    for transaction in history:
+        # Ajouter la transaction comme perte
+        transactions_list.append({
+            "source_account": transaction.account_by_id,
+            "destination_account": transaction.account_to_id,
+            "source_account_name": transaction.account_by.name,
+            "source_destination_name": transaction.account_to.name,
+            "price": -transaction.balance,
+            "date": transaction.creation_date,
+            "motif": transaction.motif
+        })
+        # Ajouter la transaction comme gain
+        transactions_list.append({
+            "source_account": transaction.account_to_id,
+            "destination_account": transaction.account_by_id,
+            "source_account_name": transaction.account_to.name,
+            "destination_account_name": transaction.account_by.name,
+            "price": transaction.balance,
+            "date": transaction.creation_date,
+            "motif": transaction.motif
+        })
+
+    return transactions_list
+
+# Transactions d'un compte bancaire
 @routerTransactions.get("/account/transactions", tags=["transactions"])
 def account_transactions(account_id: int, user: dict = Depends(get_user), session: Session = Depends(get_session)):
     transactions = session.exec(
