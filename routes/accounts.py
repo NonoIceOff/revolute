@@ -71,7 +71,7 @@ def view_account(account_id: int, user: dict = Depends(get_user), session = Depe
     if account.is_closed:
         raise HTTPException(status_code=404, detail="Account is closed")
     
-    return  {"iban": account.iban, "name": account.name ,"balance": account.balance, "creation_date": account.creation_date, "type": type_name.name}
+    return  {"id": account.id ,"iban": account.iban, "name": account.name ,"balance": account.balance, "creation_date": account.creation_date, "type": type_name.name}
 
 
 @routerAccount.get("/view_accounts", tags=["Accounts"])
@@ -90,6 +90,7 @@ def view_accounts(user: dict = Depends(get_user), session: Session = Depends(get
     for account in accounts:
         type_name = session.exec(select(AccountTypes).where(AccountTypes.id == account.type_id)).first()
         account_details.append({
+            "id": account.id ,
             "iban": account.iban,
             "name": account.name,
             "balance": account.balance,
