@@ -95,6 +95,14 @@ def transactions(body: CreateTransactions,  user: dict = Depends(get_user), sess
     user_account_sender = session.exec(select(Account).where(Account.id == body.account_by_id)).first()
     user_account_receiver = session.exec(select(Account).where(Account.id == body.account_to_id)).first()
 
+    if user_account_sender is None:
+        raise HTTPException(status_code=404, detail="Account sender not found")
+    if user_account_receiver is None:
+        raise HTTPException(status_code=404, detail="Account receiver not found")
+
+    if body.account_to_id == body.account_by_id:
+        raise HTTPException(status_code=404, detail="You cannot make a transfer. The two bank accounts are the same")
+
     if user_account_sender.user_id != user_account_receiver.user_id:
         raise HTTPException(status_code=404, detail="You cannot make a transfer. The two user accounts must be the same")
     if user_account_sender.user_id != user["id"]:
