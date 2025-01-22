@@ -25,6 +25,28 @@ def historyTransactions(user: dict = Depends(get_user), session = Depends(get_se
     history = session.exec(select(Transactions).where(Transactions.account_by_id == user_id).order_by(desc(Transactions.creation_date))).all()
     return [{"source_account": historys.account_by_id, "destination_account": historys.account_to_id, "price": historys.balance, "date": historys.creation_date, "motif": historys.motif} for historys in history ] 
 
+@routerTransactions.get("/account/transactions", tags=["transactions"])
+def account_transactions(account_id: int, user: dict = Depends(get_user), session: Session = Depends(get_session)):
+    transactions = session.exec(
+        select(Transactions).where(
+            (Transactions.account_by_id == account_id) | (Transactions.account_to_id == account_id)
+        ).order_by(desc(Transactions.creation_date))
+    ).all()
+
+    if not transactions:
+        raise HTTPException(status_code=404, detail="No transactions found for this account")
+
+    return [
+        {
+            "source_account": transaction.account_by_id,
+            "destination_account": transaction.account_to_id,
+            "price": transaction.balance,
+            "date": transaction.creation_date,
+            "motif": transaction.motif
+        }
+        for transaction in transactions
+    ]
+
 @routerTransactions.post("/transactions", tags=["transactions"])
 def transactions(body: CreateTransactions,  user: dict = Depends(get_user), session = Depends(get_session)):
     if body.account_to_id is None:
