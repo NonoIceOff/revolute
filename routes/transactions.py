@@ -38,6 +38,7 @@ def account_transactions(account_id: int, user: dict = Depends(get_user), sessio
 
     return [
         {
+            "id": transaction.id,
             "source_account": transaction.account_by_id,
             "destination_account": transaction.account_to_id,
             "price": transaction.balance,
@@ -121,4 +122,4 @@ def view_transaction(transaction_id: int, user: dict = Depends(get_user), sessio
     if user_sender != user["id"] or user_receiver != user["id"]:
         raise HTTPException(status_code=404, detail="You are not the sender or the receiver of this transaction")
 
-    return  {"source_account": transaction.account_by_id, "destination_account": transaction.account_to_id, "price": transaction.balance, "date": transaction.creation_date, "motif": transaction.motif}
+    return  {"id": transaction.id, "source_account": transaction.account_by_id, "destination_account": transaction.account_to_id, "price": transaction.balance, "date": transaction.creation_date, "motif": transaction.motif}
