@@ -73,6 +73,17 @@ def view_account(account_id: int, user: dict = Depends(get_user), session = Depe
     
     return  {"id": account.id ,"iban": account.iban, "name": account.name ,"balance": account.balance, "creation_date": account.creation_date, "type": type_name.name}
 
+@routerAccount.get("/view_account/name", tags=["Accounts"])
+def view_account(account_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
+    account = session.exec(select(Account).where(Account.id == account_id, Account.is_closed == False, Account.user_id == user["id"])).first()
+    
+    if account is None:
+        raise HTTPException(status_code=404, detail="No account found owned by you")
+    if account.is_closed:
+        raise HTTPException(status_code=404, detail="Account is closed")
+    
+    return  {"name": account.name}
+
 
 @routerAccount.get("/view_accounts", tags=["Accounts"])
 def view_accounts(user: dict = Depends(get_user), session: Session = Depends(get_session)):

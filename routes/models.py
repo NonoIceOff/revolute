@@ -23,6 +23,9 @@ class Account(SQLModel, table=True):
     is_principal: bool = Field(default=False)
     is_closed: bool = Field(default=False)
     creation_date: date = Field(default=date.today())
+    transactions_by: list["Transactions"] = Relationship(back_populates="account_by", sa_relationship_kwargs={"foreign_keys": "Transactions.account_by_id"})
+    transactions_to: list["Transactions"] = Relationship(back_populates="account_to", sa_relationship_kwargs={"foreign_keys": "Transactions.account_to_id"})
+
 
 
 class Transactions(SQLModel, table=True):
@@ -35,6 +38,8 @@ class Transactions(SQLModel, table=True):
     is_chancelled: bool = Field(default=False)
     is_pending: bool = Field(default=False)
     is_confirmed: bool = Field(default=False)
+    account_by: Account = Relationship(back_populates="transactions_by", sa_relationship_kwargs={"foreign_keys": "Transactions.account_by_id"})
+    account_to: Account = Relationship(back_populates="transactions_to", sa_relationship_kwargs={"foreign_keys": "Transactions.account_to_id"})
 
 class Virements(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
