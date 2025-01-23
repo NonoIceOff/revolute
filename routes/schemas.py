@@ -29,6 +29,11 @@ class CreateVirements(BaseModel):
     balance: float
     motif: str
 
+class CreateBeneficiary(BaseModel):
+    user_id: int
+    iban: str
+    user_account_beneficiary: int
+
 class CreateDeposits(BaseModel):
     account_id: int
     earn: float
