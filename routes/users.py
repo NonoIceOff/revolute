@@ -5,7 +5,7 @@ from math import floor
 from fastapi import APIRouter,  Depends
 from datetime import date, datetime, timedelta
 
-from routes.schemas import CreateUser, LoginUser
+from routes.schemas import CreateUser, LoginUser, PasswordUpdate
 from .models import Account, User
 from fastapi import HTTPException
 from .config import *
@@ -46,3 +46,18 @@ def register(body: CreateUser, session = Depends(get_session)):
     session.commit()
     session.refresh(account)
     return {"token": token}
+
+@router.patch("/profil/{body.password}", tags=["users"])
+def update_password(body : PasswordUpdate, session = Depends(get_session)):
+    db_password = session.exec(select(User).where(User.password == body.password)).first()
+    if not db_password:
+        raise HTTPException(status_code=404, detail="password not found")
+    
+    if not sha256_crypt.verify(body.password, db_password.password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    
+    db_password.password = sha256_crypt.hash(body.new_password)
+    session.add(db_password)
+    session.commit()
+    session.refresh(db_password)
+    return {"message": "Password updated successfully"}
