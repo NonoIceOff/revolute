@@ -34,7 +34,7 @@ def virements(body: CreateVirements,  user: dict = Depends(get_user), session = 
         raise HTTPException(status_code=404, detail="You cannot create a virements with an account that does not belong to you")
 
 
-    accountId_receiver = session.exec(select(Account).where(Account.id == body.account_to_id)).first()
+    account_receiver = session.exec(select(Account).where(Account.id == body.account_to_id)).first()
     account_sender = session.exec(select(Account).where(Account.id == body.account_by_id)).first()
 
     if body.balance <= 0:
@@ -43,6 +43,9 @@ def virements(body: CreateVirements,  user: dict = Depends(get_user), session = 
     if account_sender.balance <= body.balance:
         raise HTTPException(status_code=404, detail="Insufficient balance")
     
+    if account_receiver.is_principal == False:
+        raise HTTPException(status_code=404, detail="The bank account receiver must be principal")
+    
     
     account_sender.balance -= body.balance
     virement = Virements(account_by_id = body.account_by_id, account_to_id=body.account_to_id, balance= body.balance, motif= body.motif, is_cancelled = False, is_pending= True, is_confirmed=False)
@@ -50,7 +53,7 @@ def virements(body: CreateVirements,  user: dict = Depends(get_user), session = 
     session.add(virement)
     session.commit()
     session.refresh(virement, account_sender)
-    ceiling_account(accountId_receiver, body.balance, session)
+    ceiling_account(account_receiver, body.balance, session)
     return virement
     
 

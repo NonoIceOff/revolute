@@ -6,23 +6,49 @@ from .dependencies import ceiling_account
 from datetime import date, datetime
 from fastapi import FastAPI, HTTPException
 from math import floor
-from sqlmodel import Session, select 
+from sqlmodel import Session, desc, select 
 
 routerBeneficiary = APIRouter()
 
 @routerBeneficiary.post("/add_benef", tags=["Deposits"])
-def create_benef(body: CreateBeneficiary, session = Depends(get_session)):
-    benef = session.exec(select(Account).where(Account.iban == body.iban)).first()
+def create_benef(body: CreateBeneficiary, user: dict = Depends(get_user), session = Depends(get_session)):
+    user_id = user["id"]
+    bank_account_benef = session.exec(select(Account).where(Account.iban == body.iban)).first()
 
-    if benef is None:
+    if bank_account_benef is None:
         raise HTTPException(status_code=404, detail="Non non non l'iban n'existe pas")
     
-    if body.user_id == benef.user_id :
+    if user_id == bank_account_benef.user_id :
          raise HTTPException(status_code=404, detail="Non non non tu peux pas te mettre en bénéficiaire")
     
-    beneficiary = Beneficiary(user_id=body.user_id, user_account_beneficiary= body.user_account_beneficiary)
+    beneficiary = Beneficiary(user_id=user_id, account_beneficiary= bank_account_benef.id)
 
     session.add(beneficiary)
     session.commit()
     session.refresh(beneficiary)
     return beneficiary
+
+# liste de tous les bénéficiaires de la personne
+@routerBeneficiary.get("/view_beneficiaries", tags=["Accounts"])
+def view_accounts(user: dict = Depends(get_user), session: Session = Depends(get_session)):
+    beneficiaries = session.exec(
+        select(Beneficiary).where(
+            Beneficiary.user_id == user["id"]
+        ).order_by(desc(Beneficiary.creation_date))
+    ).all()
+    
+    if not beneficiaries:
+        raise HTTPException(status_code=404, detail="No account found owned by you")
+    
+    beneficiaries_details = []
+    for beneficiary in beneficiaries:
+        beneficiaries_details.append({
+            "id": beneficiary.id ,
+            "user_id": beneficiary.user_id,
+            "account_beneficiary": beneficiary.account_beneficiary,
+            "bank_account_beneficiary_iban": beneficiary.account.iban,
+            "bank_account_beneficiary_name": beneficiary.account.name,
+            "creation_date": beneficiary.creation_date,
+        })
+    
+    return beneficiaries_details
