@@ -47,17 +47,18 @@ def register(body: CreateUser, session = Depends(get_session)):
     session.refresh(account)
     return {"token": token}
 
-@router.patch("/profil/{body.password}", tags=["users"])
-def update_password(body : PasswordUpdate, session = Depends(get_session)):
-    db_password = session.exec(select(User).where(User.password == body.password)).first()
-    if not db_password:
-        raise HTTPException(status_code=404, detail="password not found")
+@router.patch("/profil/change_password", tags=["users"])
+def update_password(body: PasswordUpdate, user: dict = Depends(get_user), session: Session = Depends(get_session)):
+    user_account = session.exec(select(User).where(User.id == user["id"])).first()
     
-    if not sha256_crypt.verify(body.password, db_password.password):
+    if not user_account:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not sha256_crypt.verify(body.password, user_account.password):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
     
-    db_password.password = sha256_crypt.hash(body.new_password)
-    session.add(db_password)
+    user_account.password = sha256_crypt.hash(body.new_password)
+    session.add(user_account)
     session.commit()
-    session.refresh(db_password)
-    return {"message": "Password updated successfully"}
+    session.refresh(user_account)
+    return {"token": generate_token(user_account)}
