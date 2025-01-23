@@ -7,6 +7,7 @@ from .config import *
 from .dependencies import ceiling_account
 from fastapi import HTTPException
 from sqlmodel import desc
+from apscheduler.schedulers.background import BackgroundScheduler
 
 
     #🥝🥝                                      🥝🥝         
@@ -19,6 +20,13 @@ from sqlmodel import desc
 
 routerTransactions = APIRouter()
 is_finish = False
+scheduler = BackgroundScheduler()
+scheduler.start()
+
+@routerTransactions.on_event("shutdown")
+def on_shutdown():
+    scheduler.shutdown()
+
 
 ## Transactions pour tout l'utilisateur
 @routerTransactions.post("/transactions/history", tags=["transactions"])
@@ -171,3 +179,15 @@ def view_transaction(transaction_id: int, user: dict = Depends(get_user), sessio
         raise HTTPException(status_code=404, detail="You are not the sender or the receiver of this transaction")
 
     return  {"id": transaction.id, "source_account": transaction.account_by_id, "destination_account": transaction.account_to_id, "price": transaction.balance, "date": transaction.creation_date, "motif": transaction.motif}
+
+
+
+@routerTransactions.post('/cron')
+def cron_transaction(body: CreateTransactions,  user: dict = Depends(get_user), session = Depends(get_session)):
+    scheduler.add_job(transactions, trigger = "interval", seconds = 5, args=[body, user, session], id="kiwi")
+    return {"message": "Prélèvement Automatique Activée"}
+
+@routerTransactions.post('/cancel_cron')
+def cron_transaction_cancel():
+    scheduler.remove_job("kiwi")
+    return {"message": "Prélèvement Automatique Désactivée"}
