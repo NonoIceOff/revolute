@@ -7,6 +7,7 @@ from .models import Account, Transactions
 from fastapi import FastAPI, HTTPException
 from .dependencies import can_create_principal_account
 from .config import *
+from passlib.hash import sha256_crypt
 
 
 routerAccount = APIRouter()
@@ -33,14 +34,19 @@ def open_account(body: CreateAccount, user: dict = Depends(get_user), session = 
     return account
 
 @routerAccount.post("/close_account", tags=["Accounts"])
-def close_account(account_id: int, user: dict = Depends(get_user), session: Session = Depends(get_session)):
+def close_account(password: str, account_id: int, user: dict = Depends(get_user), session: Session = Depends(get_session)):
     
     account = session.exec(select(Account).where(Account.id == account_id)).first()
+    current_user = session.exec(select(User).where(user["id"] == account.user_id)).first()
+    hash = current_user.password
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
 
     if account.is_principal:
         raise HTTPException(status_code=404, detail="Cannot close principal account")
+
+    if sha256_crypt.verify(password, hash) != True:
+        raise HTTPException(status_code=404, detail="Le mot de passe n'est pas bon")
 
     pending_transactions = session.exec(select(Transactions).where(
         (Transactions.account_by_id == account_id) | (Transactions.account_to_id == account_id),
@@ -72,17 +78,6 @@ def view_account(account_id: int, user: dict = Depends(get_user), session = Depe
         raise HTTPException(status_code=404, detail="Account is closed")
     
     return  {"id": account.id ,"iban": account.iban, "name": account.name ,"balance": account.balance, "creation_date": account.creation_date, "type": type_name.name}
-
-@routerAccount.get("/view_account/name", tags=["Accounts"])
-def view_account(account_id: int, user: dict = Depends(get_user), session = Depends(get_session)):
-    account = session.exec(select(Account).where(Account.id == account_id, Account.is_closed == False, Account.user_id == user["id"])).first()
-    
-    if account is None:
-        raise HTTPException(status_code=404, detail="No account found owned by you")
-    if account.is_closed:
-        raise HTTPException(status_code=404, detail="Account is closed")
-    
-    return  {"name": account.name}
 
 
 @routerAccount.get("/view_accounts", tags=["Accounts"])

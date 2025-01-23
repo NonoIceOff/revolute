@@ -5,6 +5,7 @@ from routes.accounts import routerAccount
 from routes.deposit import routerDeposit
 from routes.transactions import routerTransactions
 from routes.virements import routerVirements
+from routes.beneficaire import routerBeneficiary
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi.middleware.cors import CORSMiddleware
 from routes.cronjobs import distribution_transactions, distribution_virements
@@ -32,6 +33,7 @@ app.include_router(routerAccount)
 app.include_router(routerDeposit)
 app.include_router(routerTransactions)
 app.include_router(routerVirements)
+app.include_router(routerBeneficiary)
 
 scheduler = BackgroundScheduler()
 
@@ -39,8 +41,8 @@ scheduler = BackgroundScheduler()
 @app.on_event("startup")
 def on_startup():
     create_db_and_tables()
-    scheduler.add_job(distribution_transactions, trigger = "interval", seconds = 5)
-    scheduler.add_job(distribution_virements, trigger = "interval", seconds = 5)
+    scheduler.add_job(distribution_transactions, trigger = "interval", seconds = 60)
+    scheduler.add_job(distribution_virements, trigger = "interval", seconds = 60)
     scheduler.start()
     
 @app.on_event("shutdown")

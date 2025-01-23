@@ -25,6 +25,9 @@ class Account(SQLModel, table=True):
     creation_date: date = Field(default=date.today())
     transactions_by: list["Transactions"] = Relationship(back_populates="account_by", sa_relationship_kwargs={"foreign_keys": "Transactions.account_by_id"})
     transactions_to: list["Transactions"] = Relationship(back_populates="account_to", sa_relationship_kwargs={"foreign_keys": "Transactions.account_to_id"})
+    virements_by: list["Virements"] = Relationship(back_populates="account_by", sa_relationship_kwargs={"foreign_keys": "Virements.account_by_id"})
+    virements_to: list["Virements"] = Relationship(back_populates="account_to", sa_relationship_kwargs={"foreign_keys": "Virements.account_to_id"})
+    beneficiaries: list["Beneficiary"] = Relationship(back_populates="account")
 
 
 
@@ -51,6 +54,9 @@ class Virements(SQLModel, table=True):
     is_chancelled: bool = Field(default=False)
     is_pending: bool = Field(default=False)
     is_confirmed: bool = Field(default=False)
+    account_by: Account = Relationship(back_populates="virements_by", sa_relationship_kwargs={"foreign_keys": "Virements.account_by_id"})
+    account_to: Account = Relationship(back_populates="virements_to", sa_relationship_kwargs={"foreign_keys": "Virements.account_to_id"})
+    
 
 class Deposits(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -62,5 +68,8 @@ class Deposits(SQLModel, table=True):
 class Beneficiary(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id")
-    user_account_beneficiary: int = Field(default=None, foreign_key="account.id")
+    account_beneficiary: int = Field(default=None, foreign_key="account.id")
     creation_date: datetime = Field(default=datetime.now())
+    account: Account = Relationship(back_populates="beneficiaries")
+
+Account.beneficiaries = Relationship(back_populates="account")

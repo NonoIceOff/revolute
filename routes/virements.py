@@ -16,6 +16,30 @@ def historyVirements(user: dict = Depends(get_user), session = Depends(get_sessi
     history = session.exec(select(Virements).where(Virements.account_by_id == user_id ).order_by(desc(Virements.creation_date))).all()
     return [{"source_account": historys.account_by_id, "destination_account": historys.account_to_id, "price": historys.balance, "date": historys.creation_date, "motif": historys.motif} for historys in history ] 
 
+# Virements d'un compte bancaire
+@routerVirements.get("/account/virements", tags=["virements"])
+def account_virements(account_id: int, user: dict = Depends(get_user), session: Session = Depends(get_session)):
+    virements = session.exec(
+        select(Virements).where(
+            (Virements.account_by_id == account_id) | (Virements.account_to_id == account_id)
+        ).order_by(desc(Virements.creation_date))
+    ).all()
+
+    if not virements:
+        raise HTTPException(status_code=404, detail="No transactions found for this account")
+
+    return [
+        {
+            "id": virement.id,
+            "source_account": virement.account_by_id,
+            "destination_account": virement.account_to_id,
+            "price": virement.balance,
+            "date": virement.creation_date,
+            "motif": virement.motif
+        }
+        for virement in virements
+    ]
+
 @routerVirements.post("/virements", tags=["virements"])
 def virements(body: CreateVirements,  user: dict = Depends(get_user), session = Depends(get_session)):
     if body.account_to_id is None:
@@ -34,7 +58,7 @@ def virements(body: CreateVirements,  user: dict = Depends(get_user), session = 
         raise HTTPException(status_code=404, detail="You cannot create a virements with an account that does not belong to you")
 
 
-    accountId_receiver = session.exec(select(Account).where(Account.id == body.account_to_id)).first()
+    account_receiver = session.exec(select(Account).where(Account.id == body.account_to_id)).first()
     account_sender = session.exec(select(Account).where(Account.id == body.account_by_id)).first()
 
     if body.balance <= 0:
@@ -43,14 +67,18 @@ def virements(body: CreateVirements,  user: dict = Depends(get_user), session = 
     if account_sender.balance <= body.balance:
         raise HTTPException(status_code=404, detail="Insufficient balance")
     
+    if account_receiver.is_principal == False:
+        raise HTTPException(status_code=404, detail="The bank account receiver must be principal")
+    
     
     account_sender.balance -= body.balance
     virement = Virements(account_by_id = body.account_by_id, account_to_id=body.account_to_id, balance= body.balance, motif= body.motif, is_cancelled = False, is_pending= True, is_confirmed=False)
     session.add(account_sender)
     session.add(virement)
     session.commit()
-    session.refresh(virement, account_sender)
-    ceiling_account(accountId_receiver, body.balance, session)
+    session.refresh(virement)
+    session.refresh(account_sender)
+    ceiling_account(account_receiver, body.balance, session)
     return virement
     
 
