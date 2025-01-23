@@ -6,7 +6,7 @@ from .dependencies import ceiling_account
 from datetime import date, datetime
 from fastapi import FastAPI, HTTPException
 from math import floor
-from sqlmodel import Session, select 
+from sqlmodel import Session, desc, select 
 
 
 routerDeposit = APIRouter()
@@ -55,3 +55,26 @@ def create_deposit(body: CreateDeposits, session = Depends(get_session)):
         ceiling_acc(account, body.earn, session)
 
         return {"message": "Deposit created successfully", "data": body}
+    
+# Depots d'un compte bancaire
+@routerDeposit.get("/account/deposits", tags=["Deposits"])
+def account_deposits(account_id: int, user: dict = Depends(get_user), session: Session = Depends(get_session)):
+    deposits = session.exec(
+        select(Deposits).where(
+            (Deposits.account == account_id)
+        ).order_by(desc(Deposits.creation_date))
+    ).all()
+
+    if not deposits:
+        raise HTTPException(status_code=404, detail="No deposits found for this account")
+
+    return [
+        {
+            "id": deposit.id,
+            "account_id": deposit.account,
+            "price": deposit.earn,
+            "date": deposit.creation_date,
+            "motif": deposit.motif
+        }
+        for deposit in deposits
+    ]

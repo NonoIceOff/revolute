@@ -16,6 +16,30 @@ def historyVirements(user: dict = Depends(get_user), session = Depends(get_sessi
     history = session.exec(select(Virements).where(Virements.account_by_id == user_id ).order_by(desc(Virements.creation_date))).all()
     return [{"source_account": historys.account_by_id, "destination_account": historys.account_to_id, "price": historys.balance, "date": historys.creation_date, "motif": historys.motif} for historys in history ] 
 
+# Virements d'un compte bancaire
+@routerVirements.get("/account/virements", tags=["virements"])
+def account_virements(account_id: int, user: dict = Depends(get_user), session: Session = Depends(get_session)):
+    virements = session.exec(
+        select(Virements).where(
+            (Virements.account_by_id == account_id) | (Virements.account_to_id == account_id)
+        ).order_by(desc(Virements.creation_date))
+    ).all()
+
+    if not virements:
+        raise HTTPException(status_code=404, detail="No transactions found for this account")
+
+    return [
+        {
+            "id": virement.id,
+            "source_account": virement.account_by_id,
+            "destination_account": virement.account_to_id,
+            "price": virement.balance,
+            "date": virement.creation_date,
+            "motif": virement.motif
+        }
+        for virement in virements
+    ]
+
 @routerVirements.post("/virements", tags=["virements"])
 def virements(body: CreateVirements,  user: dict = Depends(get_user), session = Depends(get_session)):
     if body.account_to_id is None:

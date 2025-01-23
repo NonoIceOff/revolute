@@ -16,10 +16,13 @@ def create_benef(body: CreateBeneficiary, user: dict = Depends(get_user), sessio
     bank_account_benef = session.exec(select(Account).where(Account.iban == body.iban)).first()
 
     if bank_account_benef is None:
-        raise HTTPException(status_code=404, detail="Non non non l'iban n'existe pas")
+        raise HTTPException(status_code=404, detail="No no no iban does not exist")
     
     if user_id == bank_account_benef.user_id :
-         raise HTTPException(status_code=404, detail="Non non non tu peux pas te mettre en bénéficiaire")
+         raise HTTPException(status_code=404, detail="No, no, no, you can't be a beneficiary")
+    
+    if bank_account_benef.is_principal == False:
+         raise HTTPException(status_code=404, detail="The account is secondary. You must enter a principal account.")
     
     beneficiary = Beneficiary(user_id=user_id, account_beneficiary= bank_account_benef.id)
 
