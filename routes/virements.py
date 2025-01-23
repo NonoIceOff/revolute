@@ -76,7 +76,8 @@ def virements(body: CreateVirements,  user: dict = Depends(get_user), session = 
     session.add(account_sender)
     session.add(virement)
     session.commit()
-    session.refresh(virement, account_sender)
+    session.refresh(virement)
+    session.refresh(account_sender)
     ceiling_account(account_receiver, body.balance, session)
     return virement
     

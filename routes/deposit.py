@@ -30,7 +30,8 @@ def ceiling_acc(account: Account, sold: float, session = Session):
             session.add(transaction)
             session.add(account)
             session.commit()
-            session.refresh(principal_account, transaction)
+            session.refresh(principal_account)
+            session.refresh(transaction)
             return("surplus ajouter au compte principal", surplus)
         else:
             return("sold mis à jour", account.balance)

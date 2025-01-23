@@ -125,8 +125,10 @@ def transactions(body: CreateTransactions,  user: dict = Depends(get_user), sess
     session.add(account_sender)
     session.add(transaction)
     session.commit()
-    session.refresh(transaction, account_sender)
+    session.refresh(transaction)
+    session.refresh(account_sender)
     ceiling_account(accountId_receiver, body.balance, session)
+    print(transaction)
     return transaction
     
 
