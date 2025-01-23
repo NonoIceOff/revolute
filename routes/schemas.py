@@ -36,3 +36,7 @@ class CreateDeposits(BaseModel):
     account_id: int
     earn: float
     motif: str
+
+class PasswordUpdate(BaseModel):
+    password: str
+    new_password: str
